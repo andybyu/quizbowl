@@ -143,7 +143,6 @@ get_reports <- function(link){
   )
 }
 
-
 string_getlink <- function(str){
   return(
     all_stat_reports[which(all_stat_reports$display==str),'link']
@@ -153,7 +152,7 @@ get_link <- function(reports,str){
   return(reports[which(reports[,1]==str),2])
 }
 
-# A function that has no purpose
+# Makes it so that the dropdowns have default values
 get_selection <- function(str,colnames){
   if (str %in% colnames){
     return(str)
@@ -161,8 +160,6 @@ get_selection <- function(str,colnames){
     return('Rank')
   }
 }
-
-
 
 get_regression <- function(x,y){
   if (Inf %in% x | Inf %in% y){
@@ -339,5 +336,5 @@ server <- function(input,output,session){
   # END ----
 }
 
-## Run shiny - YOU DUMBASS THIS HAS TO COME LAST OR ELSE IT WILL CAUSE AN ERROR
+## Run shiny - THIS HAS TO COME LAST OR ELSE IT WILL CAUSE AN ERROR
 shinyApp(ui,server)
