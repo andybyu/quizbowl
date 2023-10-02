@@ -4,7 +4,9 @@ library(ggplot2)
 library(ggrepel)
 library(shiny)
 library(dplyr)
+library(stringr)
 
+# setwd('OneDrive/Documents/Quizbowl Stats')
 all_stat_reports <- read.csv('all_stat_reports.csv')
 
 # Gets individual stat table from a link
@@ -42,7 +44,7 @@ numeric_columns <- function(data){
 as_num <- function(vec){
   fin <- NULL
   for (i in vec){
-    if (i == '—'){
+    if (i %in% c('—','—	')){
       fin <- c(fin,Inf)
     } else {
       fin <- c(fin,as.numeric(i))
@@ -107,14 +109,29 @@ plot_stats <- function(data,xmin,xmax,ymin,ymax,xvar='PPG',yvar='P/G',plot_color
   gg <- ggplot(data,aes(x=data[,xvar], y=data[,yvar]))
   if (show_regression){
     suppressWarnings(gg <- gg + geom_smooth())
-  }  
-  gg <- gg + geom_point(aes(color=data[,plot_color])) + 
+  }
+  if (is.character(data[,plot_color])){
+    gg <- gg + geom_point(aes(color=str_wrap(data[,plot_color],width=20)))
+  } else {
+    gg <- gg + geom_point(aes(color=data[,plot_color],width=20))
+  }
+  gg <- gg + 
     theme(legend.position="bottom") +
     labs(color = plot_color) +
     xlab(xvar) + ylab(yvar) + ggtitle(title) + xlim(xmin,xmax) + ylim(ymin,ymax)
-  if (show_labels){
-    gg <- gg + geom_text_repel(aes(label=Player,color=data[,plot_color]),size=2.5,max.overlaps = 10)
+  if (is.numeric(data[,plot_color])){
+    # Creates the color gradient for continuous numeric vectors
+    gg <- gg + # scale_color_paletteer_c('grDevices::Warm')
+      scale_color_gradientn(colours=c('#9f39e6','#dd00bf','#ff0092','#ff0065','#ff373a','#fc6600','#e28800','#c1a400','#99ba00','#65cc33','#26b462','#109977'))
   }
+  if (show_labels){
+    if (is.character(data[,plot_color])){
+      gg <- gg + geom_text_repel(aes(label=Player,color=str_wrap(data[,plot_color],20)),size=2.5,max.overlaps = 10)
+    } else {
+      gg <- gg + geom_text_repel(aes(label=Player,color=data[,plot_color]),size=2.5,max.overlaps = 10)
+    }
+  }
+  # print(is.numeric(data[,plot_color]))
   return(gg)
 }
 
@@ -231,7 +248,9 @@ ui <- fluidPage(
   titlePanel('Quizbowl Scatterplots'),
   sidebarLayout(
     sidebarPanel(
-      selectInput('tourney_name','Stat report',choices=all_stat_reports$display),
+      selectInput('tourney_name','Stat report',
+                  choices=all_stat_reports$display,
+                  selected="2023 Chicago Open <8262> - Combined"),
       selectInput('x_axis','x-axis',choices='PPG'),
       selectInput('y_axis','y-axis',choices='P/G'),
       selectInput('color','Color',choices='Team'),
@@ -239,7 +258,7 @@ ui <- fluidPage(
       checkboxInput('show_regression','Show smoother',value=F),
       checkboxInput('show_labels','Show names',value=T),
       p(em('Note: '),'Some names may not show due to overlap.'),
-      selectizeInput('filter_by','Filter by player(s)',multiple=T,choices='Player...'),
+      selectizeInput('filter_by','Find player(s)',multiple=T,choices='Player...'),
       p(textOutput('size')),
       p(textOutput('corr')),
       p(textOutput('mux')),
@@ -266,7 +285,7 @@ server <- function(input,output,session){
   filtered <- reactive({
     filter_players(the_data(),input$filter_by)
   })
-  # Defines the limits of the plot (THIS IS PROBABLY THE DUMBEST AND SLOWEST WAY TO DO THINGS)
+  # Defines the limits of the plot
   xmin <- reactive(min(the_data()[,input$x_axis]))
   xmax <- reactive(max((the_data()[,input$x_axis])[is.finite(the_data()[,input$x_axis])]))
   ymin <- reactive(min(the_data()[,input$y_axis]))
