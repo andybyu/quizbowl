@@ -1,3 +1,4 @@
+
 ## Packages
 library(rvest)
 library(ggplot2)
@@ -6,7 +7,7 @@ library(shiny)
 library(dplyr)
 library(stringr)
 
-# setwd('OneDrive/Documents/Quizbowl Stats')
+setwd(getSrcDirectory(function(){})[1])
 all_stat_reports <- read.csv('all_stat_reports.csv')
 
 # Gets individual stat table from a link
@@ -250,7 +251,7 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput('tourney_name','Stat report',
                   choices=all_stat_reports$display,
-                  selected="2023 Chicago Open <8262> - Combined"),
+                  selected='Penn Bowl 2023 @ Mainsite <8471> - Prelims'),
       selectInput('x_axis','x-axis',choices='PPG'),
       selectInput('y_axis','y-axis',choices='P/G'),
       selectInput('color','Color',choices='Team'),
